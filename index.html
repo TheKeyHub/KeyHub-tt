@@ -41,9 +41,11 @@ var a = {};
 $(".translation").each(function( ) {
   var id = $( this ).attr("id");
   var val = $( this ).children().eq(1).text();
-  a[id] = val;
+  if(val !== ""){
+    a[id] = val;
+  }
 });
-download("KeyHub-translation.txt", JSON.stringify(a));
+download("KeyHub-translation.txt", JSON.stringify(a, null, '\t'));
 }
 function download(filename, text) {
     //https://ourcodeworld.com/articles/read/189/how-to-create-a-file-and-generate-a-download-with-javascript-in-the-browser-without-a-server
