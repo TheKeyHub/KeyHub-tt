@@ -39,7 +39,7 @@ function importJson(){
 function exportJson(){
 var a = {};
 $(".translation").each(function( ) {
-  var id = $( this ).text().attr("id");
+  var id = $( this ).attr("id");
   var val = $( this ).children().eq(1).text();
   a[id] = val;
 });
