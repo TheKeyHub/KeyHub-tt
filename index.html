@@ -6,6 +6,13 @@
 <title>KeyHub Translation Tool</title>
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
 <script src="https://code.jquery.com/jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+<style>
+.col{
+border: 1px solid black;
+overflow:scroll;
+white-space: nowrap;
+}
+</style>
 </head>
 <body>
 <div class="container" id="table">
@@ -21,7 +28,7 @@
 <script>
 $.getJSON( "https://raw.githubusercontent.com/jondycz/KeyHub/main/pages/localization/en.json", function( data ) {
   $.each( data, function( key, val ) {
-    $('<div class="row" id="'+key+'"><div class="col og">'+val+'</div><div class="col new"></div></div>').appendTo( "#table" );
+    $('<div class="row" id="'+key+'"><div class="col og">'+val+'</div><div class="col new" contenteditable="true"></div></div>').appendTo( "#table" );
   });
 });
 </script>
