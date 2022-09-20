@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
 <script src="https://code.jquery.com/jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
 <style>
-.col{
+.translation{
 border: 1px solid black;
 overflow:scroll;
 white-space: nowrap;
@@ -24,18 +24,39 @@ white-space: nowrap;
       Translation
     </div>
   </div>
-<button onclick="exportJson();">Export Translation</button>
 </div>
+<button onclick="importJson();">Import Existing Translation</button>
+<button onclick="exportJson();">Export Translation</button>
 <script>
 $.getJSON( "https://raw.githubusercontent.com/jondycz/KeyHub/main/pages/localization/en.json", function( data ) {
   $.each( data, function( key, val ) {
-    $('<div class="row" id="'+key+'"><div class="col og"></div><div class="col new" contenteditable="true"></div></div>').appendTo( "#table" );
+    $('<div class="row translation" id="'+key+'"><div class="col og"></div><div class="col new" contenteditable="true"></div></div>').appendTo( "#table" );
     $('#'+key).children().first().text(val);
   });
 });
 function importJson(){
 }
 function exportJson(){
+var a = {};
+$(.translation).each(function( ) {
+  var id = $( this ).text().attr("id");
+  var val = $( this ).children().eq(1).text();
+  a[id] = val;
+});
+download("KeyHub-translation.txt", JSON.stringify(a));
+}
+function download(filename, text) {
+    //https://ourcodeworld.com/articles/read/189/how-to-create-a-file-and-generate-a-download-with-javascript-in-the-browser-without-a-server
+    var element = document.createElement('a');
+    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+    element.setAttribute('download', filename);
+
+    element.style.display = 'none';
+    document.body.appendChild(element);
+
+    element.click();
+
+    document.body.removeChild(element);
 }
 </script>
 </body>
