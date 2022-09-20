@@ -24,13 +24,19 @@ white-space: nowrap;
       Translation
     </div>
   </div>
+<button onclick="exportJson();">Export Translation</button>
 </div>
 <script>
 $.getJSON( "https://raw.githubusercontent.com/jondycz/KeyHub/main/pages/localization/en.json", function( data ) {
   $.each( data, function( key, val ) {
-    $('<div class="row" id="'+key+'"><div class="col og">'+val+'</div><div class="col new" contenteditable="true"></div></div>').appendTo( "#table" );
+    $('<div class="row" id="'+key+'"><div class="col og"></div><div class="col new" contenteditable="true"></div></div>').appendTo( "#table" );
+    $('#'+key).children().first().text(val);
   });
 });
+function importJson(){
+}
+function exportJson(){
+}
 </script>
 </body>
 </html>
