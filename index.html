@@ -16,6 +16,9 @@ white-space: nowrap;
 </head>
 <body>
 <div class="container" id="table">
+<button onclick="$('#inp').click();">Import Existing Translation</button>
+<input id="inp" type='file' style="visibility:hidden;" onchange="importJson(event);" />
+<button onclick="exportJson();">Export Translation</button>
   <div class="row" id="header">
     <div class="col">
       Original string (English)
@@ -25,8 +28,6 @@ white-space: nowrap;
     </div>
   </div>
 </div>
-<button onclick="importJson();">Import Existing Translation</button>
-<button onclick="exportJson();">Export Translation</button>
 <script>
 $.getJSON( "https://raw.githubusercontent.com/jondycz/KeyHub/main/pages/localization/en.json", function( data ) {
   $.each( data, function( key, val ) {
@@ -34,7 +35,17 @@ $.getJSON( "https://raw.githubusercontent.com/jondycz/KeyHub/main/pages/localiza
     $('#'+key).children().first().text(val);
   });
 });
-function importJson(){
+function importJson(e){
+  var file = e.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var strings = JSON.parse(e.target.result);
+    $.each( strings, function( key, val ) {
+      $('#'+key).children().eq(1).text(val);
+    });
+  }
+  reader.readAsText(file)
 }
 function exportJson(){
 var a = {};
