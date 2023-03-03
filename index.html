@@ -1,75 +1,321 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>KeyHub Translation Tool</title>
-<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
-<script src="https://code.jquery.com/jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
-<style>
-.translation .col-6{
-border: 1px solid black;
-word-wrap: break-word;
-}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>KeyHub TT</title>
+  <style>
+    /* Variables */
+    :root {
+      --primary:#FF8800;
+      --background:#0E0D0F;
+      --important:#232323;
+    }
+    /* Variables */
+
+    /* Boiler Plate */
+    *, ::after, ::before {
+	    box-sizing: border-box;
+	    margin: 0;
+	    padding: 0;
+	    outline: 0;
+    }
+    html {
+      font-family: "system-ui","sans-serif";
+      background-color: var(--background);
+      color:white;
+    }
+    /* Boiler Plate */
+
+    /* Helper Class */
+    .highlight {
+      color:var(--primary);
+    }
+    .d-flex {
+      display:flex
+    }
+    .column {
+      flex-direction: column;
+    }
+    .p-3 {
+      padding: 3em!important;
+    }
+    .f-size-big {
+      font-size:3em
+    }
+    .f-thin {
+      font-weight: 300;
+    }
+    .center-all {
+      align-items: center; 
+      justify-content: center;
+    }
+    .push-bottom {
+      margin-bottom: 2em;
+    }
+    /* Helper Class */
+
+    /* UI COMPONENTS */
+    .trans-column {
+      background: var(--background);
+      border: 1px solid rgb(255 255 255 / 22%);
+      padding: 8px;
+      word-wrap: break-word;
+      width: auto;
+    }
+    .translate {
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid rgb(255 255 255 / 22%);
+    }
+
+    .indicator {
+      color:gray;
+      display: none;
+      
+    }
+    .container-float {
+      background: var(--important);
+      /* box-shadow: 0px 20px 35px -11px rgb(255 255 255 / 30%); */
+      display: grid;
+      border-radius: 0px;
+      padding: 2em;
+      width: 100%;
+      grid-template-columns: minmax(4em,30em);
+      gap:3em
+    }
+    .controllers {
+      background: var(--important);
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      padding: 1.25em;
+      height: 6em;
+    }
+    .kh-button {
+      border: 1px solid var(--primary);
+      background: var(--background);
+      font-family: inherit;
+      color:white;
+      padding: 1em;
+      cursor: pointer;
+      transition: 0.15s ease-in-out;
+    }
+
+    .kh-button:hover {
+      background-color: #FF8800;
+      border: 8px solid #FF8800;
+    }
+
+    #modal {
+      position: fixed;
+      top: 25%;
+      opacity: 0;
+      transition: 200ms ease-in-out;
+      z-index: 10;
+      width: 100%;
+      height: 25em;
+      pointer-events: none;
+      gap: 2em;
+    }
+
+    #modal.active {
+      pointer-events: all;
+      opacity: 1;
+    }
+
+    #overlay {
+	    position: fixed;
+	    transition: 200ms ease-in-out;
+	    opacity: 0;
+	    background: rgb(0, 0, 0);
+	    top: 0;
+	    left: 0;
+	    right: 0;
+	    bottom: 0;
+	    pointer-events: none;
+	    z-index: 9;
+    }
+
+    #overlay.active {
+    	opacity: 0.85;
+    	pointer-events: all;
+    }
+    /* UI COMPONENTS */
+
+    /* Media Responsiveness */
+    @media (min-width: 700px) {
+      .indicator {
+        display: block;
+      }
+      .container-float {
+        width: auto;
+        padding: 4em;
+        border-radius: 8px;
+        grid-template-columns: 1fr 1fr;
+        transition: 0.15s ease-in-out;
+      }
+      .trans-column {
+        background: transparent;
+        padding: 16px 0px;
+        width: 16em;
+        border:none;
+        border-bottom: 1px solid rgb(255 255 255 / 22%);
+      }
+    }
+  </style>
 </head>
-<body>
-<div class="container" id="table">
-<button onclick="$('#inp').click();">Import Existing Translation</button>
-<button onclick="exportJson();">Export Translation</button>
-<input id="inp" type='file' style="visibility:hidden;" onchange="importJson(event);" />
-  <div class="row" id="header">
-    <div class="col">
+
+<body class="d-flex column center-all">
+  <input style="display: none;" type="file" name="t-file" id="t-file">
+  <div id="header" class="d-flex column center-all push-bottom">
+    <h1 class="f-size-big f-thin">Key<text class="highlight">Hub</text></h1>
+    <span>Translation Tool</span>
+  </div>
+  <div class="controllers push-bottom">
+    <button class="kh-button" onclick="openModal();">Import</button>
+    <button class="kh-button" onclick="clearAll();">Clear</button>
+    <button class="kh-button" onclick="exportTranslation();">Export</button>
+  </div>
+  <div class="container-float" id="tt-table">
+    
+    <div class="indicator">
       Original string (English)
     </div>
-    <div class="col">
+    <div class="indicator">
       Translation
     </div>
   </div>
-</div>
-<script>
-$.getJSON( "https://raw.githubusercontent.com/jondycz/KeyHub/main/pages/localization/en.json", function( data ) {
-  $.each( data, function( key, val ) {
-    $('<div class="row translation" id="'+key+'"><div class="col-6 og"></div><div class="col-6 new" contenteditable="true"></div></div>').appendTo( "#table" );
-    $('#'+key).children().first().text(val);
-  });
-});
-function importJson(e){
-  var file = e.target.files[0];
-  if (!file) return;
-  var reader = new FileReader();
-  reader.onload = function(e) {
-    var strings = JSON.parse(e.target.result);
-    $.each( strings, function( key, val ) {
-      $('#'+key).children().eq(1).text(val);
+  <div class="d-flex center-all" id="modal">
+    <button class="kh-button p-3" onclick="importTranslation('link',prompt('Paste your link here.'));">Link</button>
+    <button class="kh-button p-3" onclick="input.click()">File</button>
+  </div>
+  <div id="overlay"></div>
+  <script>
+    const table = document.querySelector("#tt-table");
+    const modal = document.querySelector("#modal");
+    const overlay = document.querySelector("#overlay");
+    const input = document.querySelector("#t-file");
+    // Load the default strings
+    fetch("https://raw.githubusercontent.com/jondycz/KeyHub/main/pages/localization/en.json")
+    .then((res) => res.json())
+    .then((res) => {
+      const translate_column = ( key, val) => `<div data-key="${key}" class="trans-column">${val.replaceAll("<","&lt;")}</div> <div contenteditable="true" data-key="${key}" class="trans-column translate"></div>`
+      for (const [ key, val] of Object.entries(res)) {
+        table.innerHTML += translate_column(key,val)
+      }
     });
-  }
-  reader.readAsText(file)
-}
-function exportJson(){
-var a = {};
-$(".translation").each(function( ) {
-  var id = $( this ).attr("id");
-  var val = $( this ).children().eq(1).text();
-  if(val !== ""){
-    a[id] = val;
-  }
-});
-download("KeyHub-translation.txt", JSON.stringify(a, null, '\t'));
-}
-function download(filename, text) {
-    //https://ourcodeworld.com/articles/read/189/how-to-create-a-file-and-generate-a-download-with-javascript-in-the-browser-without-a-server
-    var element = document.createElement('a');
-    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
-    element.setAttribute('download', filename);
+    
+    // Functions.
+    function exportTranslation() {
+      // Create List
+      let list = {};
+      document.querySelectorAll(".translate").forEach((text) => {
+        let id = text.dataset.key;
+        let content = text.textContent;
+        if (content !== "") {
+          list[id] = content;
+        }
+      });
+      // Download With Blob
+      const element = document.createElement('a');
+      let blob = new Blob([JSON.stringify(list,null,"\t")], { type: 'text/json;charset=utf-8' });
+      element.download = 'Translation.txt';
+      element.href = URL.createObjectURL(blob)
+      element.click();
+    }
+    function importTranslation(type,item) {
+      switch (type) {
+        case "json":
+          for (const [ key, val] of Object.entries(item)) {
+            document.querySelector(`.translate[data-key="${key}"]`).textContent = val;
+          }
+          break;
+        case "link":
+          fetch(item)
+          .then((res) => res.json())
+          .then((res) => {
+            for (const [ key, val] of Object.entries(res)) {
+              document.querySelector(`.translate[data-key="${key}"]`).textContent = val;
+            }
+          });
+          modal.classList.remove("active");
+          overlay.classList.remove("active");
+          break;
+      }
+    }
+    function preventDefaults (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
+    function handleDrop(e) {
+      handleFile(e.dataTransfer.files[0]);
+      table.style.boxShadow = "0 0 0 0 #ff8800";
+    }
+    function handleFile(file) {
+      let reader = new FileReader();
+      reader.readAsText(file);
+      reader.onloadend = function(e) {
+        let strings = JSON.parse(e.target.result);
+        importTranslation("json",strings);
+      }
+    }
+    function highlight() {
+      table.style.boxShadow = "0px 20px 35px 10px #ff8800";
+    }
+    function unhighlight() {
+      table.style.boxShadow = "0 0 0 0 #ff8800";
+    }
+    function openModal() {
+      modal.classList.add("active");
+      overlay.classList.add("active");
+    }
+    function clearAll() {
+      document.querySelectorAll(".translate").forEach((x) => {
+        x.textContent = ""
+      });
+    }
+    // Event Listeners
+    table.addEventListener('drop', handleDrop, false);
+    table.addEventListener('dragover', highlight, false);
+    table.addEventListener('dragleave', unhighlight, false);
+    overlay.addEventListener('click', () => {
+      modal.classList.remove("active");
+      overlay.classList.remove("active");
+    });
+    modal.addEventListener('click', (a) => {
+      if (a.target.id === "modal") {
+        modal.classList.remove("active");
+        overlay.classList.remove("active");
+      }
+    });
+    input.addEventListener('change', () => {
+      let reader = new FileReader();
+      reader.readAsText(input.files[0]);
+      reader.onloadend = () => {
+        let items = JSON.parse(reader.result)
+        for (const [ key, val] of Object.entries(items)) {
+              document.querySelector(`.translate[data-key="${key}"]`).textContent = val;
+        }
+        modal.classList.remove("active");
+        overlay.classList.remove("active");
+      }
+    });
+    // https://stackoverflow.com/questions/7317273/warn-user-before-leaving-web-page-with-unsaved-changes
+    window.addEventListener("beforeunload", function (e) {
+      let confirmationMessage = 'It looks like you have been editing something. '
+                              + 'If you leave before saving, your changes will be lost.';
 
-    element.style.display = 'none';
-    document.body.appendChild(element);
-
-    element.click();
-
-    document.body.removeChild(element);
-}
-</script>
+      (e || window.event).returnValue = confirmationMessage;
+      return confirmationMessage;
+    });
+    // Disable default drag events.
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+      table.addEventListener(eventName, preventDefaults, false)   
+      document.body.addEventListener(eventName, preventDefaults, false)
+    })
+  </script>
 </body>
 </html>
