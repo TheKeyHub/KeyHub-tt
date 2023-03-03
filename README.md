@@ -11,5 +11,4 @@ Translation tool for key-hub.eu for translators.
 
 
 ## Credits
-- Jondcyz - Main Logic & Translation Integration
-- WiLuX - Code Optimization & Extra Features
+- WiLuX - Code Optimization, Design & Extra Features
