@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>KeyHub TT</title>
+  <title>KeyHub Translation Tool</title>
   <style>
     /* Variables */
     :root {
@@ -209,7 +209,7 @@
     });
     
     // Functions.
-    function exportTranslation() {
+    function serializeTranslation() {
       // Create List
       let list = {};
       document.querySelectorAll(".translate").forEach((text) => {
@@ -219,19 +219,26 @@
           list[id] = content;
         }
       });
+	  return list;
+    }
+	function exportTranslation() {
+      let list = serializeTranslation();
+	  window.lastExport = list;
       // Download With Blob
       const element = document.createElement('a');
       let blob = new Blob([JSON.stringify(list,null,"\t")], { type: 'text/json;charset=utf-8' });
       element.download = 'Translation.txt';
       element.href = URL.createObjectURL(blob)
-      element.click();
-    }
+      element.click();	
+	}
     function importTranslation(type,item) {
+	  clearAll();
       switch (type) {
         case "json":
           for (const [ key, val] of Object.entries(item)) {
             document.querySelector(`.translate[data-key="${key}"]`).textContent = val;
           }
+		  window.lastExport = item;
           break;
         case "link":
           fetch(item)
@@ -240,6 +247,7 @@
             for (const [ key, val] of Object.entries(res)) {
               document.querySelector(`.translate[data-key="${key}"]`).textContent = val;
             }
+			window.lastExport = res;
           });
           modal.classList.remove("active");
           overlay.classList.remove("active");
@@ -276,6 +284,7 @@
       document.querySelectorAll(".translate").forEach((x) => {
         x.textContent = ""
       });
+	  window.lastExport = {};
     }
     // Event Listeners
     table.addEventListener('drop', handleDrop, false);
@@ -292,24 +301,31 @@
       }
     });
     input.addEventListener('change', () => {
+	  clearAll()
       let reader = new FileReader();
       reader.readAsText(input.files[0]);
       reader.onloadend = () => {
-        let items = JSON.parse(reader.result)
+        let items = JSON.parse(reader.result);
         for (const [ key, val] of Object.entries(items)) {
               document.querySelector(`.translate[data-key="${key}"]`).textContent = val;
         }
+		window.lastExport = items;
         modal.classList.remove("active");
         overlay.classList.remove("active");
       }
     });
     // https://stackoverflow.com/questions/7317273/warn-user-before-leaving-web-page-with-unsaved-changes
+	var lastExport = {};
     window.addEventListener("beforeunload", function (e) {
       let confirmationMessage = 'It looks like you have been editing something. '
                               + 'If you leave before saving, your changes will be lost.';
-
-      (e || window.event).returnValue = confirmationMessage;
-      return confirmationMessage;
+      let translationState = serializeTranslation();
+	  console.log(translationState);
+	  console.log(window.lastExport);
+      if(JSON.stringify(translationState) !== JSON.stringify(window.lastExport)){
+        (e || window.event).returnValue = confirmationMessage;
+        return confirmationMessage;	  
+      }
     });
     // Disable default drag events.
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
