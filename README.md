@@ -1,6 +1,15 @@
-# KeyHub-tt
-KeyHub Translation Tool
+# Keyhub Translation Tool (KeyHub-tt)
 
-Use this online tool to easily translate strings on our website.
+## Description
+Translation tool for key-hub.eu for translators.
 
-Written entirely on my phone because I hate myself.
+## How To Use
+
+- Open the [**website**]().
+- Edit the given strings.
+- Export it and send a PR to [**here**](https://github.com/jondycz/KeyHub).
+
+
+## Credits
+- Jondcyz - Main Logic & Translation Integration
+- WiLuX - Code Optimization & Extra Features
