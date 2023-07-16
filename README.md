@@ -5,7 +5,7 @@ Translation tool for key-hub.eu for translators.
 
 ## How To Use
 
-- Open the [**website**](translate.key-hub.eu).
+- Open the [**website**](https://translate.key-hub.eu).
 - Edit the given strings.
 - Export it and send a PR to [**here**](https://github.com/jondycz/KeyHub).
 
