@@ -198,8 +198,9 @@
     const modal = document.querySelector("#modal");
     const overlay = document.querySelector("#overlay");
     const input = document.querySelector("#t-file");
+    const default_url = "https://raw.githubusercontent.com/jondycz/KeyHub/main/pages/localization/en_GB_English.json"
     // Load the default strings
-    fetch("https://raw.githubusercontent.com/jondycz/KeyHub/main/pages/localization/en.json")
+    fetch(default_url)
     .then((res) => res.json())
     .then((res) => {
       const translate_column = ( key, val) => `<div data-key="${key}" class="trans-column">${val.replaceAll("<","&lt;")}</div> <div contenteditable="true" data-key="${key}" class="trans-column translate"></div>`
