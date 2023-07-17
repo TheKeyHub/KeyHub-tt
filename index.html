@@ -4,6 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
   <title>KeyHub Translation Tool</title>
   <style>
     /* Variables */
@@ -199,6 +200,7 @@
     const overlay = document.querySelector("#overlay");
     const input = document.querySelector("#t-file");
     const default_url = "https://raw.githubusercontent.com/jondycz/KeyHub/main/pages/localization/en_GB_English.json"
+    var exportName;
     // Load the default strings
     fetch(default_url)
     .then((res) => res.json())
@@ -208,8 +210,17 @@
         table.innerHTML += translate_column(key,val)
       }
     });
+	
+	//TODO: render language selection from: https://api.github.com/repos/jondycz/KeyHub/contents/pages/localization
     
     // Functions.
+	function getFlagEmoji(countryCode) {
+	  const codePoints = countryCode
+		.toUpperCase()
+		.split('')
+		.map(char =>  127397 + char.charCodeAt());
+	  return String.fromCodePoint(...codePoints);
+    }
     function serializeTranslation() {
       // Create List
       let list = {};
@@ -228,9 +239,9 @@
       // Download With Blob
       const element = document.createElement('a');
       let blob = new Blob([JSON.stringify(list,null,"\t")], { type: 'text/json;charset=utf-8' });
-      element.download = 'Translation.txt';
+      element.download = window.exportName ?? 'keyhub-translation.json';
       element.href = URL.createObjectURL(blob)
-      element.click();	
+      element.click();
 	}
     function importTranslation(type,item) {
 	  clearAll();
@@ -250,6 +261,7 @@
             }
 			window.lastExport = res;
           });
+		  window.exportName = new URL(item).pathname.split('/').pop();
           modal.classList.remove("active");
           overlay.classList.remove("active");
           break;
@@ -269,6 +281,10 @@
       reader.onloadend = function(e) {
         let strings = JSON.parse(e.target.result);
         importTranslation("json",strings);
+		window.lastExport = strings;
+		window.exportName = String(file.name);
+		modal.classList.remove("active");
+		overlay.classList.remove("active");
       }
     }
     function highlight() {
@@ -282,6 +298,7 @@
       overlay.classList.add("active");
     }
     function clearAll() {
+      window.exportName = undefined;
       document.querySelectorAll(".translate").forEach((x) => {
         x.textContent = ""
       });
@@ -302,18 +319,7 @@
       }
     });
     input.addEventListener('change', () => {
-	  clearAll()
-      let reader = new FileReader();
-      reader.readAsText(input.files[0]);
-      reader.onloadend = () => {
-        let items = JSON.parse(reader.result);
-        for (const [ key, val] of Object.entries(items)) {
-              document.querySelector(`.translate[data-key="${key}"]`).textContent = val;
-        }
-		window.lastExport = items;
-        modal.classList.remove("active");
-        overlay.classList.remove("active");
-      }
+	  handleFile(input.files[0]);
     });
     // https://stackoverflow.com/questions/7317273/warn-user-before-leaving-web-page-with-unsaved-changes
 	var lastExport = {};
