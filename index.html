@@ -1,342 +1,355 @@
 <!DOCTYPE html>
 <html>
-
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="dark">
-  <title>KeyHub Translation Tool</title>
-  <style>
-    /* Variables */
-    :root {
-      --primary:#FF8800;
-      --background:#0E0D0F;
-      --important:#232323;
-    }
-    /* Variables */
-
-    /* Boiler Plate */
-    *, ::after, ::before {
-	    box-sizing: border-box;
-	    margin: 0;
-	    padding: 0;
-	    outline: 0;
-    }
-    html {
-      font-family: "system-ui","sans-serif";
-      background-color: var(--background);
-      color:white;
-    }
-    /* Boiler Plate */
-
-    /* Helper Class */
-    .highlight {
-      color:var(--primary);
-    }
-    .d-flex {
-      display:flex
-    }
-    .column {
-      flex-direction: column;
-    }
-    .p-3 {
-      padding: 3em!important;
-    }
-    .f-size-big {
-      font-size:3em
-    }
-    .f-thin {
-      font-weight: 300;
-    }
-    .center-all {
-      align-items: center; 
-      justify-content: center;
-    }
-    .push-bottom {
-      margin-bottom: 2em;
-    }
-    /* Helper Class */
-
-    /* UI COMPONENTS */
-    .trans-column {
-      background: var(--background);
-      border: 1px solid rgb(255 255 255 / 22%);
-      padding: 8px;
-      word-wrap: break-word;
-      width: auto;
-    }
-    .translate {
-      background: transparent;
-      border: none;
-      border-bottom: 1px solid rgb(255 255 255 / 22%);
-    }
-
-    .indicator {
-      color:gray;
-      display: none;
-      
-    }
-    .container-float {
-      background: var(--important);
-      /* box-shadow: 0px 20px 35px -11px rgb(255 255 255 / 30%); */
-      display: grid;
-      border-radius: 0px;
-      padding: 2em;
-      width: 100%;
-      grid-template-columns: minmax(4em,30em);
-      gap:3em
-    }
-    .controllers {
-      background: var(--important);
-      width: 100%;
-      display: flex;
-      justify-content: center;
-      gap: 16px;
-      padding: 1.25em;
-      height: 6em;
-    }
-    .kh-button {
-      border: 1px solid var(--primary);
-      background: var(--background);
-      font-family: inherit;
-      color:white;
-      padding: 1em;
-      cursor: pointer;
-      transition: 0.15s ease-in-out;
-    }
-
-    .kh-button:hover {
-      background-color: #FF8800;
-      border: 8px solid #FF8800;
-    }
-
-    #modal {
-      position: fixed;
-      top: 25%;
-      opacity: 0;
-      transition: 200ms ease-in-out;
-      z-index: 10;
-      width: 100%;
-      height: 25em;
-      pointer-events: none;
-      gap: 2em;
-    }
-
-    #modal.active {
-      pointer-events: all;
-      opacity: 1;
-    }
-
-    #overlay {
-	    position: fixed;
-	    transition: 200ms ease-in-out;
-	    opacity: 0;
-	    background: rgb(0, 0, 0);
-	    top: 0;
-	    left: 0;
-	    right: 0;
-	    bottom: 0;
-	    pointer-events: none;
-	    z-index: 9;
-    }
-
-    #overlay.active {
-    	opacity: 0.85;
-    	pointer-events: all;
-    }
-    /* UI COMPONENTS */
-
-    /* Media Responsiveness */
-    @media (min-width: 700px) {
-      .indicator {
-        display: block;
-      }
-      .container-float {
-        width: auto;
-        padding: 4em;
-        border-radius: 8px;
-        grid-template-columns: 1fr 1fr;
-        transition: 0.15s ease-in-out;
-      }
-      .trans-column {
-        background: transparent;
-        padding: 16px 0px;
-        width: 16em;
-        border:none;
-        border-bottom: 1px solid rgb(255 255 255 / 22%);
-      }
-    }
-  </style>
-</head>
-
-<body class="d-flex column center-all">
-  <input style="display: none;" type="file" name="t-file" id="t-file">
-  <div id="header" class="d-flex column center-all push-bottom">
-    <h1 class="f-size-big f-thin">Key<text class="highlight">Hub</text></h1>
-    <span>Translation Tool</span>
-  </div>
-  <div class="controllers push-bottom">
-    <button class="kh-button" onclick="openModal();">Import</button>
-    <button class="kh-button" onclick="if(confirm('Are you sure you want to erase all your work?') == true) {clearAll()}">Clear</button>
-    <button class="kh-button" onclick="exportTranslation();">Export</button>
-  </div>
-  <div class="container-float" id="tt-table">
-    
-    <div class="indicator">
-      Original string (English)
-    </div>
-    <div class="indicator">
-      Translation
-    </div>
-  </div>
-  <div class="d-flex center-all" id="modal">
-    <button class="kh-button p-3" onclick="importTranslation('link',prompt('Paste your link here.'));">Link</button>
-    <button class="kh-button p-3" onclick="input.click()">File</button>
-  </div>
-  <div id="overlay"></div>
-  <script>
-    const table = document.querySelector("#tt-table");
-    const modal = document.querySelector("#modal");
-    const overlay = document.querySelector("#overlay");
-    const input = document.querySelector("#t-file");
-    const default_url = "https://raw.githubusercontent.com/jondycz/KeyHub/main/pages/localization/en_GB_English.json"
-    var exportName;
-    // Load the default strings
-    fetch(default_url)
-    .then((res) => res.json())
-    .then((res) => {
-      const translate_column = ( key, val) => `<div data-key="${key}" class="trans-column">${val.replaceAll("<","&lt;")}</div> <div contenteditable="true" data-key="${key}" class="trans-column translate"></div>`
-      for (const [ key, val] of Object.entries(res)) {
-        table.innerHTML += translate_column(key,val)
-      }
-    });
-	
-	//TODO: render language selection from: https://api.github.com/repos/jondycz/KeyHub/contents/pages/localization
-    
-    // Functions.
-	function getFlagEmoji(countryCode) {
-	  const codePoints = countryCode
-		.toUpperCase()
-		.split('')
-		.map(char =>  127397 + char.charCodeAt());
-	  return String.fromCodePoint(...codePoints);
-    }
-    function serializeTranslation() {
-      // Create List
-      let list = {};
-      document.querySelectorAll(".translate").forEach((text) => {
-        let id = text.dataset.key;
-        let content = text.textContent;
-        if (content !== "") {
-          list[id] = content;
-        }
-      });
-	  return list;
-    }
-	function exportTranslation() {
-      let list = serializeTranslation();
-	  window.lastExport = list;
-      // Download With Blob
-      const element = document.createElement('a');
-      let blob = new Blob([JSON.stringify(list,null,"\t")], { type: 'text/json;charset=utf-8' });
-      element.download = window.exportName ?? 'keyhub-translation.json';
-      element.href = URL.createObjectURL(blob)
-      element.click();
-	}
-    function importTranslation(type,item) {
-	  clearAll();
-      switch (type) {
-        case "json":
-          for (const [ key, val] of Object.entries(item)) {
-            document.querySelector(`.translate[data-key="${key}"]`).textContent = val;
-          }
-		  window.lastExport = item;
-          break;
-        case "link":
-          fetch(item)
-          .then((res) => res.json())
-          .then((res) => {
-            for (const [ key, val] of Object.entries(res)) {
-              document.querySelector(`.translate[data-key="${key}"]`).textContent = val;
-            }
-			window.lastExport = res;
-          });
-		  window.exportName = new URL(item).pathname.split('/').pop();
-          modal.classList.remove("active");
-          overlay.classList.remove("active");
-          break;
-      }
-    }
-    function preventDefaults (e) {
-      e.preventDefault()
-      e.stopPropagation()
-    }
-    function handleDrop(e) {
-      handleFile(e.dataTransfer.files[0]);
-      table.style.boxShadow = "0 0 0 0 #ff8800";
-    }
-    function handleFile(file) {
-      let reader = new FileReader();
-      reader.readAsText(file);
-      reader.onloadend = function(e) {
-        let strings = JSON.parse(e.target.result);
-        importTranslation("json",strings);
-		window.lastExport = strings;
-		window.exportName = String(file.name);
-		modal.classList.remove("active");
-		overlay.classList.remove("active");
-      }
-    }
-    function highlight() {
-      table.style.boxShadow = "0px 20px 35px 10px #ff8800";
-    }
-    function unhighlight() {
-      table.style.boxShadow = "0 0 0 0 #ff8800";
-    }
-    function openModal() {
-      modal.classList.add("active");
-      overlay.classList.add("active");
-    }
-    function clearAll() {
-      window.exportName = undefined;
-      document.querySelectorAll(".translate").forEach((x) => {
-        x.textContent = ""
-      });
-	  window.lastExport = {};
-    }
-    // Event Listeners
-    table.addEventListener('drop', handleDrop, false);
-    table.addEventListener('dragover', highlight, false);
-    table.addEventListener('dragleave', unhighlight, false);
-    overlay.addEventListener('click', () => {
-      modal.classList.remove("active");
-      overlay.classList.remove("active");
-    });
-    modal.addEventListener('click', (a) => {
-      if (a.target.id === "modal") {
-        modal.classList.remove("active");
-        overlay.classList.remove("active");
-      }
-    });
-    input.addEventListener('change', () => {
-	  handleFile(input.files[0]);
-    });
-    // https://stackoverflow.com/questions/7317273/warn-user-before-leaving-web-page-with-unsaved-changes
-	var lastExport = {};
-    window.addEventListener("beforeunload", function (e) {
-      let confirmationMessage = 'It looks like you have been editing something. '
-                              + 'If you leave before saving, your changes will be lost.';
-      let translationState = serializeTranslation();
-      if(JSON.stringify(translationState) !== JSON.stringify(window.lastExport)){
-        (e || window.event).returnValue = confirmationMessage;
-        return confirmationMessage;	  
-      }
-    });
-    // Disable default drag events.
-    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-      table.addEventListener(eventName, preventDefaults, false)   
-      document.body.addEventListener(eventName, preventDefaults, false)
-    })
-  </script>
-</body>
+   <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <meta name="color-scheme" content="dark">
+      <title>KeyHub Translation Tool</title>
+      <style>
+         /* Variables */
+         :root {
+         --primary:#FF8800;
+         --background:#0E0D0F;
+         --important:#232323;
+         }
+         /* Variables */
+         /* Boiler Plate */
+         *, ::after, ::before {
+         box-sizing: border-box;
+         margin: 0;
+         padding: 0;
+         outline: 0;
+         }
+         html {
+         font-family: "system-ui","sans-serif";
+         background-color: var(--background);
+         color:white;
+         }
+         /* Boiler Plate */
+         /* Helper Class */
+         .highlight {
+         color:var(--primary);
+         }
+         .d-flex {
+         display:flex
+         }
+         .column {
+         flex-direction: column;
+         }
+         .f-size-big {
+         font-size:3em
+         }
+         .f-thin {
+         font-weight: 300;
+         }
+         .center-all {
+         align-items: center; 
+         justify-content: center;
+         }
+         .push-bottom {
+         margin-bottom: 2em;
+         }
+         /* Helper Class */
+         /* UI COMPONENTS */
+         .trans-column {
+         background: var(--background);
+         border: 1px solid rgb(255 255 255 / 22%);
+         padding: 8px;
+         word-wrap: break-word;
+         width: auto;
+         }
+         .translate {
+         background: transparent;
+         border: none;
+         border-bottom: 1px solid rgb(255 255 255 / 22%);
+         }
+         .indicator {
+         color:gray;
+         display: none;
+         }
+         .container-float {
+         background: var(--important);
+         /* box-shadow: 0px 20px 35px -11px rgb(255 255 255 / 30%); */
+         display: grid;
+         border-radius: 0px;
+         padding: 2em;
+         width: 100%;
+         grid-template-columns: minmax(4em,30em);
+         gap:3em
+         }
+         .controllers {
+         background: var(--important);
+         width: 100%;
+         display: flex;
+         justify-content: center;
+         gap: 16px;
+         padding: 1.25em;
+         }
+         .kh-button {
+         width: 100px;
+         height: 100px;
+         border: 1px solid var(--primary);
+         background: var(--background);
+         font-family: inherit;
+         color:white;
+         padding: 1em;
+         cursor: pointer;
+         transition: 0.15s ease-in-out;
+         }
+         .kh-button:hover {
+         background-color: #FF8800;
+         border: 8px solid #FF8800;
+         }
+         select.kh-button {
+         appearance: none;
+         background-image: url('');
+         text-align: center;
+         }
+         #modal {
+         position: fixed;
+         top: 25%;
+         opacity: 0;
+         transition: 200ms ease-in-out;
+         z-index: 10;
+         width: 100%;
+         height: 25em;
+         pointer-events: none;
+         gap: 2em;
+         }
+         #modal.active {
+         pointer-events: all;
+         opacity: 1;
+         }
+         #overlay {
+         position: fixed;
+         transition: 200ms ease-in-out;
+         opacity: 0;
+         background: rgb(0, 0, 0);
+         top: 0;
+         left: 0;
+         right: 0;
+         bottom: 0;
+         pointer-events: none;
+         z-index: 9;
+         }
+         #overlay.active {
+         opacity: 0.85;
+         pointer-events: all;
+         }
+         /* UI COMPONENTS */
+         /* Media Responsiveness */
+         @media (min-width: 700px) {
+         .indicator {
+         display: block;
+         }
+         .container-float {
+         width: auto;
+         padding: 4em;
+         border-radius: 8px;
+         grid-template-columns: 1fr 1fr;
+         transition: 0.15s ease-in-out;
+         }
+         .trans-column {
+         background: transparent;
+         padding: 16px 0px;
+         width: 16em;
+         border:none;
+         border-bottom: 1px solid rgb(255 255 255 / 22%);
+         }
+         }
+      </style>
+   </head>
+   <body class="d-flex column center-all">
+      <input style="display: none;" type="file" name="t-file" id="t-file">
+      <div id="header" class="d-flex column center-all push-bottom">
+         <h1 class="f-size-big f-thin">
+            Key
+            <text class="highlight">Hub</text>
+         </h1>
+         <span>Translation Tool</span>
+      </div>
+      <div class="controllers push-bottom">
+         <button class="kh-button" onclick="openModal();">Import</button>
+         <button class="kh-button" onclick="if(confirm('Are you sure you want to erase all your work?') == true) {clearAll()}">Clear</button>
+         <button class="kh-button" onclick="exportTranslation();">Export</button>
+      </div>
+      <div class="container-float" id="tt-table">
+         <div class="indicator">
+            Original string (English)
+         </div>
+         <div class="indicator">
+            Translation
+         </div>
+      </div>
+      <div class="d-flex center-all" id="modal">
+         <button class="kh-button" onclick="importTranslation('link',prompt('Paste your link here.'));">Link</button>
+         <button class="kh-button" onclick="input.click()">File</button>
+         <select class="kh-button" id="languageSelect" onchange="importTranslation('link',this.value);">
+            <option value="" disabled selected>GitHub</option>
+         </select>
+      </div>
+      <div id="overlay"></div>
+      <script>
+         const table = document.querySelector("#tt-table");
+         const modal = document.querySelector("#modal");
+         const overlay = document.querySelector("#overlay");
+         const input = document.querySelector("#t-file");
+         const default_url = "https://raw.githubusercontent.com/jondycz/KeyHub/main/pages/localization/en_GB_English.json"
+         var exportName;
+         // Load the default strings
+         fetch(default_url)
+         .then((res) => res.json())
+         .then((res) => {
+           const translate_column = ( key, val) => `<div data-key="${key}" class="trans-column">${val.replaceAll("<","&lt;")}</div> <div contenteditable="true" data-key="${key}" class="trans-column translate"></div>`
+           for (const [ key, val] of Object.entries(res)) {
+             table.innerHTML += translate_column(key,val)
+           }
+         });
+         
+         
+         const githubImport = document.getElementById("languageSelect");
+         fetch("https://api.github.com/repos/jondycz/KeyHub/contents/pages/localization")
+         .then(response => response.json())
+         .then(data => {
+           // Loop through the array of objects and create options
+           data.forEach(item => {
+             const option = document.createElement("option");
+             option.value = item.download_url; // Use the download_url as the option value
+             option.textContent = item.name; // Use the name as the option text
+             githubImport.appendChild(option); // Add the option to the select element
+           });
+         })
+         .catch(error => {
+           console.error("Error fetching data:", error);
+         });
+         
+         // Functions.
+         function getFlagEmoji(countryCode) {
+         const codePoints = countryCode
+         .toUpperCase()
+         .split('')
+         .map(char =>  127397 + char.charCodeAt());
+         return String.fromCodePoint(...codePoints);
+         }
+         function serializeTranslation() {
+           // Create List
+           let list = {};
+           document.querySelectorAll(".translate").forEach((text) => {
+             let id = text.dataset.key;
+             let content = text.textContent;
+             if (content !== "") {
+               list[id] = content;
+             }
+           });
+         return list;
+         }
+         function exportTranslation() {
+           let list = serializeTranslation();
+         window.lastExport = list;
+           // Download With Blob
+           const element = document.createElement('a');
+           let blob = new Blob([JSON.stringify(list,null,"\t")], { type: 'text/json;charset=utf-8' });
+           element.download = window.exportName ?? 'keyhub-translation.json';
+           element.href = URL.createObjectURL(blob)
+           element.click();
+         }
+         function importTranslation(type,item) {
+         if(!item) return;
+         clearAll();
+         console.log(item);
+           switch (type) {
+             case "json":
+               for (const [ key, val] of Object.entries(item)) {
+                 document.querySelector(`.translate[data-key="${key}"]`).textContent = val;
+               }
+         window.lastExport = item;
+               break;
+             case "link":
+               fetch(item)
+               .then((res) => res.json())
+               .then((res) => {
+                 for (const [ key, val] of Object.entries(res)) {
+                   let element = document.querySelector(`.translate[data-key="${key}"]`);
+          if (element) element.textContent = val;
+                 }
+         window.lastExport = res;
+               });
+         window.exportName = new URL(item).pathname.split('/').pop();
+               modal.classList.remove("active");
+               overlay.classList.remove("active");
+               break;
+           }
+         }
+         function preventDefaults (e) {
+           e.preventDefault()
+           e.stopPropagation()
+         }
+         function handleDrop(e) {
+           handleFile(e.dataTransfer.files[0]);
+           table.style.boxShadow = "0 0 0 0 #ff8800";
+         }
+         function handleFile(file) {
+           let reader = new FileReader();
+           reader.readAsText(file);
+           reader.onloadend = function(e) {
+             let strings = JSON.parse(e.target.result);
+             importTranslation("json",strings);
+         window.lastExport = strings;
+         window.exportName = String(file.name);
+         modal.classList.remove("active");
+         overlay.classList.remove("active");
+           }
+         }
+         function highlight() {
+           table.style.boxShadow = "0px 20px 35px 10px #ff8800";
+         }
+         function unhighlight() {
+           table.style.boxShadow = "0 0 0 0 #ff8800";
+         }
+         function openModal() {
+           modal.classList.add("active");
+           overlay.classList.add("active");
+         }
+         function clearAll() {
+           window.exportName = undefined;
+           document.querySelectorAll(".translate").forEach((x) => {
+             x.textContent = ""
+           });
+         window.lastExport = {};
+         }
+         // Event Listeners
+         table.addEventListener('drop', handleDrop, false);
+         table.addEventListener('dragover', highlight, false);
+         table.addEventListener('dragleave', unhighlight, false);
+         overlay.addEventListener('click', () => {
+           modal.classList.remove("active");
+           overlay.classList.remove("active");
+         });
+         modal.addEventListener('click', (a) => {
+           if (a.target.id === "modal") {
+             modal.classList.remove("active");
+             overlay.classList.remove("active");
+           }
+         });
+         input.addEventListener('change', () => {
+         handleFile(input.files[0]);
+         });
+         // https://stackoverflow.com/questions/7317273/warn-user-before-leaving-web-page-with-unsaved-changes
+         var lastExport = {};
+         window.addEventListener("beforeunload", function (e) {
+           let confirmationMessage = 'It looks like you have been editing something. '
+                                   + 'If you leave before saving, your changes will be lost.';
+           let translationState = serializeTranslation();
+           if(JSON.stringify(translationState) !== JSON.stringify(window.lastExport)){
+             (e || window.event).returnValue = confirmationMessage;
+             return confirmationMessage;	  
+           }
+         });
+         // Disable default drag events.
+         ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+           table.addEventListener(eventName, preventDefaults, false)   
+           document.body.addEventListener(eventName, preventDefaults, false)
+         })
+      </script>
+   </body>
 </html>
